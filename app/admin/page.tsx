@@ -1,162 +1,132 @@
 "use client";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from "firebase/firestore";
-import { Loader2, Package, ImagePlus, Trash2, Edit3, X, Check, PlusCircle } from "lucide-react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { motion } from "framer-motion";
+import { DollarSign, ShoppingBag, Package, Users, ArrowUpRight } from "lucide-react";
 
-export default function AdminPage() {
-  const router = useRouter();
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [fetchLoading, setFetchLoading] = useState(true);
-  const [isNewCategory, setIsNewCategory] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null); // ပုံ File သိမ်းဖို့
-
-  const [formData, setFormData] = useState({ 
-    name: "", category: "Speakers", description: "", imageUrl: "" 
+export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    orderCount: 0,
+    productCount: 0,
   });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (!user) router.push("/login"); // user မရှိရင် login ဆီ ပြန်လွှတ်မယ်
-    });
-    return () => unsub();
-  }, []);
-  
-  const fetchProducts = async () => {
-    setFetchLoading(true);
-    try {
-      const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
-      setProducts(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    } catch (err) {
-      // Index မရှိသေးရင် ရိုးရိုးပဲ ဆွဲထုတ်မယ်
-      const querySnapshot = await getDocs(collection(db, "products"));
-      setProducts(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    }
-    setFetchLoading(false);
-  };
-
-  useEffect(() => { fetchProducts(); }, []);
-
-  const handlePublish = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchDashboardData = async () => {
     setLoading(true);
-
     try {
-      let finalImageUrl = formData.imageUrl;
+      // 1. Fetch Orders for Revenue & Count
+      const ordersSnapshot = await getDocs(collection(db, "orders"));
+      const ordersData = ordersSnapshot.docs.map(doc => doc.data());
+      
+      const totalRev = ordersData.reduce((sum, order) => sum + (order.total || 0), 0);
+      
+      // 2. Fetch Products Count
+      const productsSnapshot = await getDocs(collection(db, "products"));
+      
+      // 3. Fetch Recent 5 Orders
+      const q = query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(5));
+      const recentSnapshot = await getDocs(q);
+      const recentData = recentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      // ၁။ ပုံအသစ်ရွေးထားရင် ImgBB ဆီ အရင်ပို့မယ်
-      if (imageFile) {
-        const imgData = new FormData();
-        imgData.append("image", imageFile);
-        
-        const res = await fetch(`https://api.imgbb.com/1/upload?key=db8208a54a11e8bf524be1aaf2f1fd10`, {
-          method: "POST",
-          body: imgData
-        });
-        const resData = await res.json();
-        if(resData.success) {
-          finalImageUrl = resData.data.url;
-        }
-      }
-
-      // ၂။ Firestore ထဲ သိမ်းမယ်
-      if (editingId) {
-        await updateDoc(doc(db, "products", editingId), { ...formData, imageUrl: finalImageUrl });
-        alert("Updated!");
-      } else {
-        await addDoc(collection(db, "products"), { 
-          ...formData, 
-          imageUrl: finalImageUrl, 
-          createdAt: new Date() 
-        });
-        alert("Published!");
-      }
-
-      setFormData({ name: "", category: "Speakers", description: "", imageUrl: "" });
-      setImageFile(null);
-      setEditingId(null);
-      fetchProducts();
-    } catch (error) { alert("Error!"); }
+      setStats({
+        totalRevenue: totalRev,
+        orderCount: ordersSnapshot.size,
+        productCount: productsSnapshot.size,
+      });
+      setRecentOrders(recentData);
+    } catch (error) {
+      console.error("Dashboard Fetch Error:", error);
+    }
     setLoading(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Delete this product?")) {
-      await deleteDoc(doc(db, "products", id));
-      fetchProducts();
-    }
-  };
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const statCards = [
+    { label: "Total Revenue", value: `$${stats.totalRevenue.toLocaleString()}`, icon: <DollarSign />, color: "bg-blue-600", shadow: "shadow-blue-500/20" },
+    { label: "Orders Received", value: stats.orderCount, icon: <ShoppingBag />, color: "bg-orange-500", shadow: "shadow-orange-500/20" },
+    { label: "Active Products", value: stats.productCount, icon: <Package />, color: "bg-purple-600", shadow: "shadow-purple-500/20" },
+  ];
 
   return (
-    <div className="pt-32 pb-20 min-h-screen bg-[#fafafa] px-6">
-      <div className="max-w-4xl mx-auto">
-        
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-            <Package className="text-blue-600"/> {editingId ? "Edit Product" : "Inventory"}
-          </h1>
-          {editingId && <button onClick={() => setEditingId(null)} className="text-red-500 text-xs font-bold uppercase">Cancel</button>}
+    <div className="space-y-12">
+      <header>
+        <h2 className="text-3xl font-black uppercase tracking-tighter italic">NEXO Business Overview</h2>
+        <p className="text-gray-400 text-sm font-medium italic">Real-time data from your store operations.</p>
+      </header>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {statCards.map((card, i) => (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            key={card.label}
+            className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-xl transition-all duration-500"
+          >
+            <div className={`w-14 h-14 ${card.color} text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg ${card.shadow}`}>
+              {card.icon}
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">{card.label}</p>
+            <p className="text-4xl font-black tracking-tighter italic">{loading ? "..." : card.value}</p>
+            <div className="absolute top-8 right-8 opacity-10 group-hover:opacity-20 transition-opacity">
+              <ArrowUpRight size={40} />
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Recent Orders Table */}
+      <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-10 border-b border-gray-50 flex justify-between items-center">
+          <h3 className="text-xl font-black uppercase tracking-tighter italic">Recent Transactions</h3>
+          <button onClick={fetchDashboardData} className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-600 hover:text-white transition">Refresh Data</button>
         </div>
-
-        <form onSubmit={handlePublish} className="bg-white p-8 rounded-[2rem] shadow-xl space-y-5 mb-12 italic">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <input type="text" placeholder="Product Name" className="p-4 bg-gray-50 rounded-xl outline-none" value={formData.name} onChange={(e)=>setFormData({...formData, name: e.target.value})} required />
-            
-            {/* File Upload Input */}
-            <label className="p-4 bg-blue-50 border-2 border-dashed border-blue-100 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-blue-100 transition">
-              <ImagePlus size={20} className="text-blue-600"/>
-              <span className="text-xs font-bold text-blue-600 uppercase">
-                {imageFile ? imageFile.name : "Choose Image File"}
-              </span>
-              <input type="file" className="hidden" accept="image/*" onChange={(e)=>setImageFile(e.target.files?.[0] || null)} />
-            </label>
-          </div>
-
-          <div className="flex gap-2">
-            {!isNewCategory ? (
-              <select className="flex-1 p-4 bg-gray-50 rounded-xl outline-none" value={formData.category} onChange={(e)=>setFormData({...formData, category: e.target.value})}>
-                <option value="Speakers">Speakers</option>
-                <option value="Headphones">Headphones</option>
-                <option value="Home Theater">Home Theater</option>
-              </select>
-            ) : (
-              <input type="text" placeholder="New Category" className="flex-1 p-4 bg-blue-50 rounded-xl outline-none" onChange={(e)=>setFormData({...formData, category: e.target.value})} />
-            )}
-            <button type="button" onClick={()=>setIsNewCategory(!isNewCategory)} className="p-4 bg-gray-100 rounded-xl"><PlusCircle size={20}/></button>
-          </div>
-
-          <textarea placeholder="Description" className="w-full p-4 bg-gray-50 rounded-xl outline-none" rows={3} value={formData.description} onChange={(e)=>setFormData({...formData, description: e.target.value})} required />
-
-          <button disabled={loading} className="w-full bg-black text-white py-5 rounded-xl font-bold uppercase tracking-widest hover:bg-blue-600 transition flex justify-center items-center gap-2">
-            {loading ? <Loader2 className="animate-spin" /> : editingId ? "Update Product" : "Publish to Shop"}
-          </button>
-        </form>
-
-        {/* List Table */}
-        <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 divide-y divide-gray-50">
-          {fetchLoading ? <div className="p-10 text-center animate-pulse uppercase text-[10px] tracking-widest text-gray-400">Loading Inventory...</div> : 
-            products.map((p) => (
-              <div key={p.id} className="p-6 flex items-center justify-between group">
-                <div className="flex items-center gap-4">
-                  <img src={p.imageUrl} className="w-12 h-12 object-contain bg-gray-50 rounded-lg" />
-                  <div>
-                    <h4 className="font-bold text-sm uppercase">{p.name}</h4>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{p.category}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => {setEditingId(p.id); setFormData(p); window.scrollTo(0,0);}} className="p-3 text-gray-300 hover:text-blue-600 transition"><Edit3 size={16}/></button>
-                  <button onClick={() => handleDelete(p.id)} className="p-3 text-gray-300 hover:text-red-600 transition"><Trash2 size={16}/></button>
-                </div>
-              </div>
-            ))
-          }
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50/50">
+              <tr>
+                <th className="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">Customer</th>
+                <th className="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
+                <th className="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400">Total</th>
+                <th className="p-8 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Time</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {loading ? (
+                <tr><td colSpan={4} className="p-20 text-center animate-pulse text-[10px] tracking-widest text-gray-300">SYNCING TRANSACTIONS...</td></tr>
+              ) : recentOrders.length === 0 ? (
+                <tr><td colSpan={4} className="p-20 text-center text-gray-400 italic">No orders found yet.</td></tr>
+              ) : (
+                recentOrders.map((order) => (
+                  <tr key={order.id} className="group hover:bg-gray-50/50 transition">
+                    <td className="p-8">
+                      <p className="font-black text-sm uppercase italic leading-none">{order.customer?.name}</p>
+                      <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tighter">{order.customer?.phone}</p>
+                    </td>
+                    <td className="p-8">
+                      <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] ${
+                        order.status === 'completed' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-500'
+                      }`}>
+                        {order.status || 'pending'}
+                      </span>
+                    </td>
+                    <td className="p-8 font-black italic text-black text-sm">${order.total?.toFixed(2)}</td>
+                    <td className="p-8 text-right text-gray-400 text-[10px] font-bold uppercase">
+                      {order.createdAt?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

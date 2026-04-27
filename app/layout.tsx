@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import PageTransition from "./components/PageTransition";
+import CartSidebar from "./components/CartSidebar";
 
 // Path ကို သင့် folder နေရာအတိုင်း ပြင်လိုက်ပါပြီ
 import Navbar from "./components/Navbar"; 
@@ -32,13 +34,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white">
-        {/* Navbar ကို ဒီနေရာမှာ ထည့်ပါ */}
-        <Navbar />
-        
+        {/* Navbar ကို အပေါ်ဆုံးမှာ ထားပါ */}
+        <Navbar /> 
+        <CartSidebar />
+        {/* Main Content ကို PageTransition နဲ့ တစ်ခါတည်း အုပ်လိုက်ပါ */}
         <main className="flex-grow">
-          {children}
-          
+          <PageTransition>
+            {children}
+          </PageTransition>
         </main>
+
+        {/* Footer ကို အောက်ဆုံးမှာ ထားပါ */}
         <Footer />
       </body>
     </html>

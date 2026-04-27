@@ -1,142 +1,184 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ShoppingBasket, ArrowLeft, ShieldCheck, Truck, RotateCcw } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Truck, ShieldCheck, RefreshCw, AlertCircle } from "lucide-react";
+import { useCartStore } from "@/store/useCartStore";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const router = useRouter();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Zustand Store မှ addToCart function ကို ခေါ်ယူခြင်း
+  const addToCart = useCartStore((state) => state.addToCart);
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (id) {
-        try {
-          const docRef = doc(db, "products", id as string);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setProduct(docSnap.data());
-          }
-        } catch (error) {
-          console.error("Error fetching product:", error);
-        } finally {
-          setLoading(false);
+      if (!id) return;
+      try {
+        const docRef = doc(db, "products", id as string);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          setProduct({ id: docSnap.id, ...docSnap.data() });
+        } else {
+          console.log("No such product!");
         }
+      } catch (error) {
+        console.error("Error fetching product:", error);
       }
+      setLoading(false);
     };
+
     fetchProduct();
   }, [id]);
 
   if (loading) return (
-    <div className="h-screen flex items-center justify-center bg-white">
-      <div className="animate-pulse flex flex-col items-center">
-        <div className="w-20 h-20 bg-gray-100 rounded-full mb-4"></div>
-        <div className="h-4 w-32 bg-gray-100 rounded"></div>
-      </div>
+    <div className="h-screen flex items-center justify-center animate-pulse uppercase tracking-[0.3em] text-[10px] font-black">
+      Loading Experience...
     </div>
   );
 
-  if (!product) return <div className="pt-40 text-center uppercase tracking-widest italic">Product Not Found</div>;
+  if (!product) return (
+    <div className="h-screen flex items-center justify-center uppercase tracking-widest text-xs font-bold">
+      Product not found.
+    </div>
+  );
 
   return (
-    <main className="bg-white min-h-screen pt-32 md:pt-40 pb-20 px-6">
-      <div className="max-w-7xl mx-auto">
+    <main className="pt-32 pb-20 bg-white min-h-screen">
+      <div className="max-w-7xl mx-auto px-6">
         
         {/* Back Button */}
         <button 
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-black transition mb-12"
+          className="flex items-center gap-2 text-gray-400 hover:text-black transition mb-12 group"
         >
-          <ArrowLeft size={14} /> Back to Collection
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+          <span className="text-[10px] font-black uppercase tracking-widest">Back to Collection</span>
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 md:gap-24 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start mb-24">
           
-          {/* Left: Product Image Container */}
+          {/* --- Left: Product Image --- */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            className="aspect-square bg-[#f9f9f9] rounded-[3rem] flex items-center justify-center p-12 md:p-20 relative overflow-hidden"
+            className="aspect-square bg-[#fcfcfc] rounded-[3.5rem] flex items-center justify-center p-12 lg:p-24 relative overflow-hidden shadow-inner border border-gray-50"
           >
             <img 
-              src={product.imageUrl} 
+              src={product.imageUrl || "/placeholder-image.png"} 
               alt={product.name} 
-              className="w-full h-full object-contain relative z-10" 
+              className="w-full h-full object-contain hover:scale-105 transition-transform duration-700"
             />
-            {/* Soft decorative glow background */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/5 to-transparent"></div>
+            {product.discountPrice && (
+              <div className="absolute top-10 left-10 bg-blue-600 text-white text-[9px] font-black px-5 py-2 rounded-full uppercase tracking-[0.2em] shadow-xl">
+                Special Offer
+              </div>
+            )}
           </motion.div>
 
-          {/* Right: Product Info */}
-          <div className="flex flex-col">
-            <motion.span 
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-blue-600 text-xs font-bold uppercase tracking-[0.4em] mb-4"
-            >
-              {product.category}
-            </motion.span>
+          {/* --- Right: Product Info --- */}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex flex-col pt-4"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-blue-600 text-[10px] font-black uppercase tracking-[0.4em]">
+                NEXO / {product.category}
+              </span>
+              <div className={`h-1.5 w-1.5 rounded-full ${product.inStock ? "bg-green-500" : "bg-red-500"} animate-pulse`}></div>
+              <span className={`text-[9px] font-black uppercase tracking-widest ${product.inStock ? "text-green-600" : "text-red-600"}`}>
+                {product.inStock ? "In Stock" : "Sold Out"}
+              </span>
+            </div>
             
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic leading-none mb-6"
-            >
+            <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic mb-8 leading-[0.85]">
               {product.name}
-            </motion.h1>
+            </h1>
 
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-gray-500 text-base md:text-lg leading-relaxed mb-10 max-w-lg"
-            >
+            <p className="text-gray-500 leading-relaxed mb-10 text-sm md:text-base max-w-md border-l-4 border-blue-50 pl-6 italic font-medium">
               {product.description}
-            </motion.p>
+            </p>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4 mb-12"
-            >
-              <button className="flex-1 bg-black text-white py-6 rounded-full font-bold uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 hover:bg-blue-600 transition shadow-2xl active:scale-95">
-                <ShoppingBasket size={18} /> Add to Basket
+            {/* Price & Action */}
+            <div className="flex flex-col gap-10 mb-14">
+              <div className="flex items-baseline gap-5">
+                {product.discountPrice ? (
+                  <>
+                    <span className="text-5xl font-black tracking-tighter text-blue-600 italic">${product.discountPrice}</span>
+                    <span className="text-2xl font-light tracking-tighter text-gray-300 line-through">${product.price}</span>
+                  </>
+                ) : (
+                  <span className="text-5xl font-black tracking-tighter italic">${product.price || "0.00"}</span>
+                )}
+              </div>
+              
+              <button 
+                onClick={() => addToCart(product)}
+                disabled={!product.inStock}
+                className={`group w-full md:w-max px-14 py-6 rounded-2xl font-black uppercase tracking-[0.4em] text-[12px] transition-all flex items-center justify-center gap-4 shadow-2xl 
+                ${product.inStock 
+                  ? "bg-black text-white hover:bg-blue-600 hover:shadow-blue-500/40 active:scale-95" 
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"}`}
+              >
+                {product.inStock ? <ShoppingBag size={20} className="group-hover:rotate-12 transition-transform" /> : <AlertCircle size={20} />}
+                {product.inStock ? "Add to Bag" : "Currently Unavailable"}
               </button>
-              <button className="flex-1 border-2 border-black py-6 rounded-full font-bold uppercase tracking-[0.2em] text-xs hover:bg-black hover:text-white transition active:scale-95">
-                Buy it now
-              </button>
-            </motion.div>
+            </div>
 
-            {/* Trust Badges */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="grid grid-cols-3 gap-4 border-t border-gray-100 pt-8"
-            >
-              <div className="flex flex-col items-center text-center">
-                <ShieldCheck size={20} className="text-gray-300 mb-2" />
-                <span className="text-[8px] font-bold uppercase tracking-widest text-gray-400">2 Year Warranty</span>
+            {/* Warranty Info Card */}
+            <div className="pt-10 border-t border-gray-100">
+              <div className="flex items-center gap-6 p-7 bg-gray-50 rounded-[2.5rem] border border-gray-100 group hover:bg-white hover:shadow-2xl transition-all duration-500">
+                <div className="p-4 bg-white rounded-2xl shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-colors duration-500">
+                  <ShieldCheck size={28} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1.5 text-gray-400">Security & Warranty</p>
+                  <p className="text-sm font-black text-black italic uppercase tracking-tighter">{product.warranty || "Standard Nexo Care"}</p>
+                </div>
               </div>
-              <div className="flex flex-col items-center text-center border-x border-gray-100">
-                <Truck size={20} className="text-gray-300 mb-2" />
-                <span className="text-[8px] font-bold uppercase tracking-widest text-gray-400">Free Shipping</span>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <RotateCcw size={20} className="text-gray-300 mb-2" />
-                <span className="text-[8px] font-bold uppercase tracking-widest text-gray-400">30-Day Returns</span>
-              </div>
-            </motion.div>
-          </div>
-
+            </div>
+          </motion.div>
         </div>
+
+        {/* --- Full Detailed Description --- */}
+        {product.details && (
+          <motion.section 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="pt-24 border-t border-gray-100"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+              <div className="lg:col-span-4">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.6em] text-blue-600 mb-5">Tech Specs</h2>
+                <h3 className="text-4xl font-black uppercase tracking-tighter italic leading-none">Full Product<br/>Intelligence</h3>
+              </div>
+              <div className="lg:col-span-8">
+                <div className="text-gray-500 leading-[2] whitespace-pre-line font-bold text-sm md:text-base bg-gray-50/50 p-10 rounded-[3rem]">
+                  {product.details}
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-10 mt-20 pt-12 border-t border-gray-50">
+                  <div className="space-y-4">
+                    <Truck className="text-blue-600" size={32} />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-black leading-tight">Priority <br/> Shipping</p>
+                  </div>
+                  <div className="space-y-4">
+                    <RefreshCw className="text-blue-600" size={32} />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-black leading-tight">7-Day <br/> Premium Return</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        )}
       </div>
     </main>
   );

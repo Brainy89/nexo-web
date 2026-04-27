@@ -2,20 +2,39 @@
 import React from "react";
 import Link from "next/link";
 import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut } from "lucide-react";
+import { auth } from "@/lib/firebase"; // Firebase auth ကို import လုပ်ပါ
+import { signOut } from "firebase/auth"; // signOut function ကို import လုပ်ပါ
+import { useRouter } from "next/navigation";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: "Dashboard", href: "/admin" },
     { icon: <Package size={20} />, label: "Products", href: "/admin/products" },
     { icon: <ShoppingCart size={20} />, label: "Orders", href: "/admin/orders" },
   ];
 
+  // Logout လုပ်မည့် Function
+  const handleLogout = async () => {
+    try {
+      if (confirm("Are you sure you want to logout?")) {
+        await signOut(auth); // Firebase ကနေ logout လုပ်ခြင်း
+        router.push("/login"); // Login page သို့ ပြန်ပို့ခြင်း
+      }
+    } catch (error) {
+      console.error("Logout Error:", error);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-100 flex flex-col fixed h-full">
         <div className="p-8">
-          <h1 className="text-2xl font-black italic tracking-tighter text-blue-600">NEXO <span className="text-black text-xs not-italic font-bold ml-2 uppercase tracking-widest">Admin</span></h1>
+          <h1 className="text-2xl font-black italic tracking-tighter text-blue-600">
+            NEXO <span className="text-black text-xs not-italic font-bold ml-2 uppercase tracking-widest">Admin</span>
+          </h1>
         </div>
         
         <nav className="flex-1 px-4 space-y-2">
@@ -28,7 +47,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         <div className="p-8 border-t border-gray-50">
-          <button className="flex items-center gap-4 text-red-400 hover:text-red-600 font-bold text-sm uppercase tracking-tight transition">
+          {/* onClick မှာ handleLogout ကို ခေါ်လိုက်ပါ */}
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-4 text-red-400 hover:text-red-600 font-bold text-sm uppercase tracking-tight transition"
+          >
             <LogOut size={20} /> Logout
           </button>
         </div>

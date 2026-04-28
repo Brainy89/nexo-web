@@ -21,6 +21,42 @@ export default function CheckoutPage() {
     paymentMethod: "cod"
   });
 
+  // --- Telegram Alert Function ---
+  const sendTelegramAlert = async (orderData: any) => {
+    const token = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
+
+    if (!token || !chatId) {
+      console.warn("Telegram configurations are missing in .env.local");
+      return;
+    }
+
+    const itemsList = orderData.items
+      .map((item: any) => `• ${item.name} (x${item.quantity})`)
+      .join("\n");
+
+    const message = `🛍️ *Order အသစ်တက်လာပါပြီ!*%0A` +
+      `--------------------------%0A` +
+      `👤 *Customer:* ${orderData.customer.name}%0A` +
+      `📞 *Phone:* ${orderData.customer.phone}%0A` +
+      `📍 *Address:* ${orderData.customer.address}%0A` +
+      `💳 *Payment:* ${orderData.customer.paymentMethod.toUpperCase()}%0A` +
+      `--------------------------%0A` +
+      `📦 *Items:*%0A${itemsList}%0A` +
+      `--------------------------%0A` +
+      `💰 *Total:* $${orderData.total.toFixed(2)}%0A` +
+      `--------------------------%0A` +
+      `🚀 *Admin Dashboard မှာ အသေးစိတ် စစ်ဆေးပါဗျ။*`;
+
+    try {
+      await fetch(
+        `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=Markdown`
+      );
+    } catch (err) {
+      console.error("Telegram Alert Error:", err);
+    }
+  };
+
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -29,12 +65,16 @@ export default function CheckoutPage() {
         customer: formData,
         items: cart,
         total: totalPrice(),
-        status: "pending", // Default status
+        status: "pending", 
         createdAt: serverTimestamp()
       };
 
+      // 1. Save to Firebase
       await addDoc(collection(db, "orders"), orderData);
       
+      // 2. Send Telegram Notification
+      await sendTelegramAlert(orderData);
+
       setIsOrdered(true);
       setTimeout(() => {
         clearCart();

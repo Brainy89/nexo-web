@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 
   // --- အခု ဒီနေရာမှာ Verification Tag ကို ထည့်ပေးလိုက်ပါ ---
   verification: {
-    google: '<meta name="google-site-verification" content="4884mwHVcjMf6ib4zmH6dDoM4DYq4XCI43-k2sysLYw" />',
+    google: '4884mwHVcjMf6ib4zmH6dDoM4DYq4XCI43-k2sysLYw',
   },
   // ---------------------------------------------------
 

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /admin  # Admin page ကို Google မှာ မပြစေချင်ရင်
+Sitemap: https://nexo.com/sitemap.xml

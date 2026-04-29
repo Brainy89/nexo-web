@@ -25,8 +25,45 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "NEXO - Digital Showcase",
-  description: "Innovation with NEXO",
+  // Website နာမည်
+  title: {
+    default: 'NEXO | Reliable Connections, Infinite Possibilities',
+    template: '%s | NEXO' 
+  },
+  description: 'Premium networking solutions and tech gadgets. High-performance routers for home and office.',
+  keywords: ['Nexo', 'Router', 'Networking', 'Tech Store', 'Myanmar'],
+
+  // --- အခု ဒီနေရာမှာ Verification Tag ကို ထည့်ပေးလိုက်ပါ ---
+  verification: {
+    google: '<meta name="google-site-verification" content="4884mwHVcjMf6ib4zmH6dDoM4DYq4XCI43-k2sysLYw" />',
+  },
+  // ---------------------------------------------------
+
+  // Open Graph (Facebook, Telegram အတွက်)
+  openGraph: {
+    title: 'NEXO Tech Store',
+    description: 'Explore high-performance networking gear.',
+    url: 'https://nexo-web-three.vercel.app', 
+    siteName: 'NEXO',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'NEXO Banner',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+
+  // Twitter / X အတွက်
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NEXO Tech Store',
+    description: 'Reliable Connections, Infinite Possibilities',
+    images: ['/og-image.jpg'],
+  },
 };
 
 export default function RootLayout({

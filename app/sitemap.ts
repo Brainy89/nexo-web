@@ -1,7 +1,17 @@
 // app/sitemap.ts
-export default function sitemap() {
+import { MetadataRoute } from 'next'
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = 'https://nexo-web-three.vercel.app'; // <--- ဒီနေရာမှာ Vercel link ကို ပြောင်းပေးပါ
+
   return [
-    { url: 'https://nexo.com', lastModified: new Date() },
-    { url: 'https://nexo.com/shop', lastModified: new Date() },
-  ];
+    {
+      url: baseUrl,
+      lastModified: new Date(),
+    },
+    {
+      url: `${baseUrl}/shop`,
+      lastModified: new Date(),
+    },
+  ]
 }

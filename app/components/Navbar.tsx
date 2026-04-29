@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { ShoppingBasket, Search, User } from 'lucide-react';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
@@ -8,13 +8,12 @@ export default function Navbar() {
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
 
-  // Scroll ဆွဲရင် Navbar ကို ဖျောက်/ပြ လုပ်ပေးတဲ့ Logic
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() ?? 0;
     if (latest > previous && latest > 150) {
-      setHidden(true); // အောက်ကိုဆွဲရင် ဖျောက်မယ်
+      setHidden(true);
     } else {
-      setHidden(false); // အပေါ်ပြန်တင်ရင် ပြမယ်
+      setHidden(false);
     }
   });
 
@@ -26,48 +25,55 @@ export default function Navbar() {
       }}
       animate={hidden ? "hidden" : "visible"}
       transition={{ duration: 0.35, ease: "easeInOut" }}
-      className="fixed w-full z-50 border-b border-white/10 top-0 overflow-hidden bg-[#0a1e36] h-24 md:h-28 flex items-center"
+      className="fixed w-full z-[100] border-b border-white/10 top-0 overflow-hidden bg-[#0a1e36] h-20 md:h-24 flex items-center"
     >
-      {/* Background Image Layer */}
       <img 
         src="/header-bg.jpg" 
         alt="NEXO Background" 
-        className="absolute inset-0 w-full h-full object-cover opacity-50" 
+        className="absolute inset-0 w-full h-full object-cover opacity-30" 
       />
 
-      <nav className="relative max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
+      <nav className="relative max-w-7xl mx-auto px-4 md:px-6 w-full flex items-center justify-between">
         
         {/* Left: Menu Links */}
-        <div className="flex gap-6 md:gap-10 text-[10px] md:text-[11px] font-bold tracking-[0.2em] uppercase text-white">
-          <Link href="/" className="hover:text-blue-300 transition">HOME</Link>
-          <Link href="/product" className="hover:text-blue-300 transition">Shop</Link>
+        <div className="flex gap-4 md:gap-8 text-[11px] md:text-[12px] font-extrabold tracking-[0.15em] uppercase text-white z-50">
+          <Link href="/" className="py-2 hover:text-blue-400 transition-colors">HOME</Link>
+          <Link href="/shop" className="py-2 hover:text-blue-400 transition-colors">SHOP</Link>
         </div>
 
-        {/* Center: Large Logo & Slogan (Slogan ကို Logo အောက် ကပ်ပေးထားပါတယ်) */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+        {/* Center: Combined Logo & Brand Name */}
+        <div className="absolute left-1/2 -translate-x-1/2 z-50">
           <Link href="/" className="flex flex-col items-center group">
-            <img 
-              src="/logo.png" 
-              alt="NEXO" 
-              className="h-14 md:h-16 w-auto object-contain mix-blend-screen transition duration-500 group-hover:scale-105" 
-            />
-            <span className="text-[7px] md:text-[9px] text-blue-200/90 font-semibold tracking-[0.3em] uppercase -mt-1 whitespace-nowrap text-center">
-              Reliable Connections, Infinite Possibilities
+            <div className="flex items-center gap-2 md:gap-3">
+              {/* Logo Icon */}
+              <img 
+                src="/logo.png" 
+                alt="NEXO Icon" 
+                className="h-8 md:h-12 w-auto object-contain mix-blend-screen transition duration-500 group-hover:scale-110" 
+              />
+              {/* Brand Name Text */}
+              <span className="text-2xl md:text-4xl font-light tracking-[0.1em] text-white transition duration-500 group-hover:text-blue-400">
+                NEXO
+              </span>
+            </div>
+            {/* Slogan - Desktop မှာပဲ ပြပါမယ် */}
+            <span className="hidden md:block text-[8px] text-blue-200/70 font-bold tracking-[0.4em] uppercase mt-1 whitespace-nowrap">
+              Reliable Connections. Infinite Possibilities
             </span>
           </Link>
         </div>
 
         {/* Right: Icons */}
-        <div className="flex items-center gap-4 md:gap-8 text-white">
-          <button className="hover:text-blue-300 transition p-2">
-            <Search className="w-5 h-5" strokeWidth={1.5} />
+        <div className="flex items-center gap-2 md:gap-6 text-white z-50">
+          <button className="hover:text-blue-400 transition p-2">
+            <Search className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2} />
           </button>
-          <button className="hidden sm:block hover:text-blue-300 transition p-2">
-            <User className="w-5 h-5" strokeWidth={1.5} />
+          <button className="hidden sm:block hover:text-blue-400 transition p-2">
+            <User className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2} />
           </button>
-          <Link href="/cart" className="hover:text-blue-300 transition p-2 relative">
-            <ShoppingBasket className="w-5 h-5" strokeWidth={1.5} />
-            <span className="absolute top-1 right-1 bg-blue-500 text-white text-[7px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">
+          <Link href="/cart" className="hover:text-blue-400 transition p-2 relative">
+            <ShoppingBasket className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2} />
+            <span className="absolute top-1 right-1 bg-blue-600 text-white text-[7px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-black shadow-lg">
               0
             </span>
           </Link>

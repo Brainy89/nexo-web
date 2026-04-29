@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 import PageTransition from "./components/PageTransition";
 import CartSidebar from "./components/CartSidebar";
@@ -18,6 +18,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['400', '700', '900'], // မင်းသုံးမယ့် အထူ/အပါးတွေကို ရွေးပါ
+  variable: '--font-montserrat', // CSS variable တစ်ခုအနေနဲ့ သတ်မှတ်မယ်
+});
+
 export const metadata: Metadata = {
   title: "NEXO - Digital Showcase",
   description: "Innovation with NEXO",
@@ -31,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${montserrat.className} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white">
         {/* Navbar ကို အပေါ်ဆုံးမှာ ထားပါ */}
